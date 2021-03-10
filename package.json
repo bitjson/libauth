@@ -110,7 +110,7 @@
     "cpy-cli": "^3.1.1",
     "cspell": "^4.0.63",
     "cz-conventional-changelog": "^3.2.0",
-    "elliptic": "^6.5.3",
+    "elliptic": "^6.5.4",
     "eslint": "^7.2.0",
     "eslint-config-bitauth": "^2.0.0",
     "eslint-config-prettier": "^6.11.0",
