@@ -3,12 +3,19 @@
   "parser": "@typescript-eslint/parser",
   "parserOptions": { "project": "./tsconfig.json" },
   "env": { "es6": true },
-  "ignorePatterns": ["node_modules", "build", "coverage"],
+  "ignorePatterns": [
+    "node_modules",
+    "build",
+    "coverage",
+    "src/lib/schema/ajv/*.js"
+  ],
   "extends": ["bitauth"],
   "globals": { "BigInt": true, "console": true, "WebAssembly": true },
   "rules": {
-    "@typescript-eslint/prefer-readonly-parameter-types": "off", // TODO: enable when Uint8Array can be made readonly, see `Immutable` type
-    "@typescript-eslint/no-unused-expressions": "off", // TODO: bug causes crash in eslint 7.2.0 – re-enable later
+    "max-params": "off",
+    "@typescript-eslint/max-params": "error",
+    "@typescript-eslint/no-unused-vars": "off", // already checked by TypeScript (this rule emits false positives on TSDoc `@link` usage)
+    "@typescript-eslint/consistent-type-definitions": ["error", "type"],
     "@typescript-eslint/naming-convention": [
       "error",
       {
@@ -23,6 +30,18 @@
       },
       { "selector": "typeLike", "format": ["PascalCase"] },
       { "selector": "enumMember", "format": ["camelCase", "UPPER_CASE"] } // Allow UPPER_CASE for opcodes
+    ],
+    "@typescript-eslint/no-unsafe-enum-comparison": "off",
+    "@typescript-eslint/prefer-readonly-parameter-types": "off",
+    "functional/prefer-immutable-types": "off",
+    "functional/type-declaration-immutability": "off",
+    "functional/functional-parameters": [
+      "error",
+      {
+        "allowRestParameter": false,
+        "allowArgumentsKeyword": false,
+        "enforceParameterCount": false
+      }
     ],
     "import/no-internal-modules": ["error"],
     "import/extensions": ["error", "always"]
@@ -47,9 +66,11 @@
             ]
           }
         ],
-        "functional/no-expression-statement": "off",
         "@typescript-eslint/naming-convention": "off",
         "@typescript-eslint/no-magic-numbers": "off",
+        "functional/no-expression-statements": "off",
+        "functional/no-conditional-statements": "off",
+        "functional/functional-parameters": "off",
         "functional/immutable-data": "off",
         "functional/no-return-void": "off"
       }

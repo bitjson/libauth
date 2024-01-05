@@ -97,7 +97,7 @@ Libauth uses [`BigInt`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/
 
 Pull Requests welcome! Please see [`CONTRIBUTING.md`](.github/CONTRIBUTING.md) for details.
 
-This library requires [Yarn](https://yarnpkg.com/) for development. If you don't have Yarn, make sure you have `Node.js` installed, then run `npm install -g yarn`. Once Yarn is installed:
+This library requires [Yarn](https://yarnpkg.com/) for development. To use `yarn`, make sure you have `Node.js` installed, then run `corepack enable`. Then clone and :
 
 ```sh
 # note the use of --recursive to clone submodules
