@@ -1,5 +1,11 @@
 # `@bitauth/libauth`
 
+## 3.0.1
+
+### Patch Changes
+
+- [`b4fbd00`](https://github.com/bitauth/libauth/commit/b4fbd00d9c6bfe83253926eb976bb3d8ccbefc7a) Thanks [@bitjson](https://github.com/bitjson)! - clarify `generateDeterministicEntropy` usage examples
+
 ## 3.0.0
 
 ### Major Changes
