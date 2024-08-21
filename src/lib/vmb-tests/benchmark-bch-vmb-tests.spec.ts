@@ -97,7 +97,7 @@ test('Run VMB tests marked with "[benchmark]"', async (t) => {
             metrics: {
               arithmeticCost: -initialNegativeCost,
               bitwiseCost: -initialNegativeCost,
-              executedInstructionCount: 0,
+              evaluatedInstructionCount: 0,
               hashDigestIterations: -initialNegativeCost,
               maxMemoryUsage: 0,
               operationCost: 0,
@@ -112,6 +112,7 @@ test('Run VMB tests marked with "[benchmark]"', async (t) => {
       const {
         arithmeticCost,
         bitwiseCost,
+        evaluatedInstructionCount,
         hashDigestIterations,
         maxMemoryUsage,
         signatureCheckCount,
@@ -132,11 +133,14 @@ test('Run VMB tests marked with "[benchmark]"', async (t) => {
         (signatureCheckCount + initialNegativeCost) * transaction.inputs.length;
       const assumedTotalStackPushedBytes =
         (stackPushedBytes + initialNegativeCost) * transaction.inputs.length;
+      const assumedTotalEvaluatedInstructionCount =
+        evaluatedInstructionCount * transaction.inputs.length;
       const assumedTotalOperationCost =
         measureOperationCost({
           arithmeticCost: arithmeticCost + initialNegativeCost,
           bitwiseCost: bitwiseCost + initialNegativeCost,
-          executedInstructionCount: lastState.metrics.executedInstructionCount,
+          evaluatedInstructionCount:
+            lastState.metrics.evaluatedInstructionCount,
           hashDigestIterations: hashDigestIterations + initialNegativeCost,
           signatureCheckCount: signatureCheckCount + initialNegativeCost,
           stackPushedBytes: stackPushedBytes + initialNegativeCost,
@@ -148,6 +152,7 @@ test('Run VMB tests marked with "[benchmark]"', async (t) => {
         stats: {
           arithmeticCost: assumedTotalArithmeticCost,
           bitwiseCost: assumedTotalBitwiseCost,
+          evaluatedInstructionCount: assumedTotalEvaluatedInstructionCount,
           hashDigestIterations: assumedTotalHashDigests,
           maxMemoryUsage,
           operationCost: assumedTotalOperationCost,
@@ -218,6 +223,8 @@ test('Run VMB tests marked with "[benchmark]"', async (t) => {
         plan.stats.arithmeticCost / plan.stats.transactionSize;
       const bitwiseCostPerByte =
         plan.stats.bitwiseCost / plan.stats.transactionSize;
+      const executedInstructionsPerByte =
+        plan.stats.evaluatedInstructionCount / plan.stats.transactionSize;
       const pushedBytesPerByte =
         plan.stats.stackPushedBytes / plan.stats.transactionSize;
       const maxMemPerByte =
@@ -259,6 +266,8 @@ test('Run VMB tests marked with "[benchmark]"', async (t) => {
         'HDI/Byte': hdiPerByte.toFixed(2),
         'Pushed Bytes': plan.stats.stackPushedBytes,
         'PB/Byte': pushedBytesPerByte.toFixed(2),
+        'Ex. Instr.': plan.stats.evaluatedInstructionCount,
+        'EI/Byte': executedInstructionsPerByte.toFixed(2),
         'Max Mem.': plan.stats.maxMemoryUsage,
         'MM/Byte': maxMemPerByte.toFixed(2),
         'Arith. Cost': plan.stats.arithmeticCost,

@@ -6,6 +6,8 @@ import { ConsensusBch2026 } from '../2026/bch-2026-consensus.js';
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export const ConsensusBchSpecOverrides = {
   maximumBytecodeLength: 100_000,
+  maximumStackItemLength: 100_000,
+  maximumVmNumberLength: 100_000,
 };
 
 /**

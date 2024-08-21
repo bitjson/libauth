@@ -22,10 +22,10 @@ export type AuthenticationProgramStateMinimum = {
    */
   metrics: {
     /**
-     * A count of instructions executed over the course of verifying
-     * the transaction.
+     * A count of instructions evaluated over the course of verifying
+     * the transaction, included unexecuted instructions.
      */
-    executedInstructionCount: number;
+    evaluatedInstructionCount: number;
   };
 };
 
@@ -175,6 +175,12 @@ export type AuthenticationProgramStateResourceLimits = {
      * the transaction.
      */
     arithmeticCost: number;
+    /**
+     * An unsigned integer counter use to count the total number of hash
+     * digest iterations required to validate the transaction; this counter
+     * persists and accumulates across all input evaluations.
+     */
+    hashDigestIterations: number;
     /**
      * A count of signature checks (A.K.A. "SigChecks") performed over the
      * course of the entire evaluation as defined by the BCH_2020_05 upgrade.

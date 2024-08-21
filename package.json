@@ -46,7 +46,7 @@
     "fix:eslint": "yarn test:eslint --fix",
     "gen:vmb_tests": "yarn build && yarn gen:vmb_tests:bch && yarn gen:vmb_tests-prettier",
     "gen:vmb_tests-prettier": "prettier 'src/lib/vmb-tests/generated/**/*.json' --write",
-    "gen:vmb_tests:bch": "node --enable-source-maps 'build/lib/vmb-tests/write-bch-vmb-tests.spec.helper.js' 'src/lib/vmb-tests/generated' && yarn run gen:vmb_tests:bch:reasons",
+    "gen:vmb_tests:bch": "node --max-old-space-size=8192 --enable-source-maps 'build/lib/vmb-tests/write-bch-vmb-tests.spec.helper.js' 'src/lib/vmb-tests/generated' && yarn run gen:vmb_tests:bch:reasons",
     "gen:vmb_tests:bch:reasons": "node --enable-source-maps 'build/lib/vmb-tests/write-reasons-bch-vmb-tests.spec.helper.js'",
     "wallet": "node --enable-source-maps 'build/lib/vmb-tests/run-live-bch-vmb-test.spec.helper.js'",
     "gen:schema": "yarn gen:schema:wallet-template && yarn gen:schema:bcmr",

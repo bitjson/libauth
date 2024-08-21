@@ -30,7 +30,7 @@ export const executionIsActive = <
   State extends AuthenticationProgramStateControlStack<unknown>,
 >(
   state: State,
-) => state.controlStack.every((item) => item !== false);
+) => state.controlStack.lastIndexOf((item: unknown) => item === false) === -1;
 
 export const conditionallyEvaluate =
   <State extends AuthenticationProgramStateControlStack<unknown>>(

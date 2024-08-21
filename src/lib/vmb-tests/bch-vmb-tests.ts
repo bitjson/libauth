@@ -23,6 +23,7 @@ import type { VmbTestDefinitionGroup } from '../lib.js';
 import { vmbTestGroupToVmbTests } from './bch-vmb-test-utils.js';
 import { loopsTestDefinitionsBch } from './sources/bch-vmb-tests.chip.loops.js';
 import { benchmarkTestDefinitionsBch } from './sources/bch-vmb-tests.core.benchmarks.js';
+import { bigIntTestDefinitionsBch } from './sources/bch-vmb-tests.core.bigint.js';
 import { cashTokenTestDefinitionsBch } from './sources/bch-vmb-tests.core.cashtokens.js';
 import { inspectionTestDefinitionsBch } from './sources/bch-vmb-tests.core.inspection.js';
 import { limitsTestDefinitionsBch } from './sources/bch-vmb-tests.core.limits.js';
@@ -210,8 +211,9 @@ export const vmbTestDefinitionsBch: VmbTestDefinitionGroup[] = [
   inspectionTestDefinitionsBch,
   cashTokenTestDefinitionsBch,
   signingSerializationTestDefinitionsBch,
-  benchmarkTestDefinitionsBch,
+  bigIntTestDefinitionsBch,
   loopsTestDefinitionsBch,
+  benchmarkTestDefinitionsBch,
 ];
 
 export const vmbTestsBch = vmbTestDefinitionsBch.map(vmbTestGroupToVmbTests);

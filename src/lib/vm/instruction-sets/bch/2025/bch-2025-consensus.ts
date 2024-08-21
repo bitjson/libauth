@@ -7,15 +7,19 @@ import type { AuthenticationProgramStateBch2025 } from './bch-2025-types.js';
  */
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export const ConsensusBch2025Overrides = {
+  baseInstructionCost: 100,
   bytesPerCodeSeparatorStandard: 65,
-  hashDigestIterationsPerByteNonstandard: 4,
+  hashDigestIterationCostConsensus: 64,
+  hashDigestIterationCostStandard: 192,
+  hashDigestIterationsPerByteNonstandard: 3.5,
   hashDigestIterationsPerByteStandard: 0.5,
   maximumControlStackDepth: 100,
   /**
    * A.K.A. `MAX_SCRIPT_ELEMENT_SIZE`
    */
   maximumStackItemLength: 10_000,
-  maximumVmNumberLength: 258,
+  maximumVmNumberLength: 10_000,
+  signatureCheckCost: 26000,
 };
 
 const base = 2n;
@@ -35,25 +39,25 @@ export const ConsensusBch2025 = {
   ...ConsensusBch2025Overrides,
 };
 
-const enum Constants {
-  opcodeOverheadMultiplier = 100,
-  hashDigestAlgorithmsBlockSize = 64,
-}
 export const measureOperationCost = <
   Metrics extends Pick<
     AuthenticationProgramStateBch2025['metrics'],
     | 'arithmeticCost'
-    | 'bitwiseCost'
-    | 'executedInstructionCount'
+    | 'evaluatedInstructionCount'
     | 'hashDigestIterations'
     | 'signatureCheckCount'
     | 'stackPushedBytes'
   >,
 >(
   metrics: Metrics,
+  {
+    baseInstructionCost = ConsensusBch2025.baseInstructionCost,
+    hashDigestIterationCost = ConsensusBch2025.hashDigestIterationCostStandard,
+    signatureCheckCost = ConsensusBch2025.signatureCheckCost,
+  } = {},
 ) =>
-  metrics.executedInstructionCount * Constants.opcodeOverheadMultiplier +
+  metrics.evaluatedInstructionCount * baseInstructionCost +
+  metrics.signatureCheckCount * signatureCheckCost +
+  metrics.hashDigestIterations * hashDigestIterationCost +
   metrics.arithmeticCost +
-  metrics.bitwiseCost +
-  metrics.hashDigestIterations * Constants.hashDigestAlgorithmsBlockSize +
   metrics.stackPushedBytes;

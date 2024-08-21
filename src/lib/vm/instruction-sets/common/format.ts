@@ -111,8 +111,7 @@ export const createOpNum2Bin =
                     ]);
             },
             {
-              maximumVmNumberByteLength:
-                ConsensusCommon.maximumStackItemLength as number,
+              maximumVmNumberByteLength: maximumStackItemLength,
               requireMinimalEncoding: false,
             },
           );
@@ -125,13 +124,17 @@ export const createOpBin2Num =
       AuthenticationProgramStateStack,
   >({
     maximumStackItemLength = ConsensusCommon.maximumStackItemLength,
-  }: { maximumStackItemLength?: number } = {}): Operation<State> =>
+    maximumVmNumberLength = ConsensusCommon.maximumVmNumberLength,
+  }: {
+    maximumStackItemLength?: number;
+    maximumVmNumberLength?: number;
+  } = {}): Operation<State> =>
   (state: State) =>
     useOneVmNumber(
       state,
       (nextState, [target]) => {
         const minimallyEncoded = bigIntToVmNumber(target);
-        return minimallyEncoded.length > ConsensusCommon.maximumVmNumberLength
+        return minimallyEncoded.length > maximumVmNumberLength
           ? applyError(
               nextState,
               AuthenticationErrorCommon.exceededMaximumVmNumberLength,

@@ -6,18 +6,19 @@ import {
   sha256 as internalSha256,
 } from '../../../crypto/crypto.js';
 import { binToHex, formatError } from '../../../format/format.js';
-import type {
-  AuthenticationProgramStateCommon,
-  AuthenticationProgramStateError,
-  AuthenticationProgramStateMinimum,
-  AuthenticationProgramStateResourceLimits,
-  AuthenticationProgramStateSignatureAnalysis,
-  AuthenticationProgramStateStack,
-  Operation,
-  Ripemd160,
-  Secp256k1,
-  Sha1,
-  Sha256,
+import {
+  type AuthenticationProgramStateCommon,
+  type AuthenticationProgramStateError,
+  type AuthenticationProgramStateMinimum,
+  type AuthenticationProgramStateResourceLimits,
+  type AuthenticationProgramStateSignatureAnalysis,
+  type AuthenticationProgramStateStack,
+  lengthToHashDigestIterationCount,
+  type Operation,
+  type Ripemd160,
+  type Secp256k1,
+  type Sha1,
+  type Sha256,
 } from '../../../lib.js';
 
 import {
@@ -185,8 +186,6 @@ export const opCheckSig =
       if (bitcoinEncodedSignature.length === 0) {
         return pushToStack(state, [booleanToVmNumber(false)]);
       }
-      // eslint-disable-next-line functional/no-expression-statements, functional/immutable-data
-      state.metrics.signatureCheckCount += 1;
 
       const coveredBytecode = encodeAuthenticationInstructions(
         state.instructions.slice(state.lastCodeSeparator + 1),
@@ -201,9 +200,13 @@ export const opCheckSig =
         sha256,
       );
       const digest = hash256(serialization, sha256);
-
-      // eslint-disable-next-line functional/no-expression-statements, functional/immutable-data
+      /* eslint-disable functional/no-expression-statements, functional/immutable-data */
+      state.metrics.signatureCheckCount += 1;
+      const doubleHashed = 1;
+      state.metrics.hashDigestIterations +=
+        doubleHashed + lengthToHashDigestIterationCount(serialization.length);
       state.signedMessages.push({ digest, serialization });
+      /* eslint-enable functional/no-expression-statements, functional/immutable-data */
 
       const useSchnorr =
         signature.length === ConsensusCommon.schnorrSignatureLength;
@@ -430,9 +433,6 @@ export const opCheckMultiSig =
                   );
                 }
 
-                // eslint-disable-next-line functional/no-expression-statements, functional/immutable-data
-                finalState.metrics.signatureCheckCount += 1;
-
                 const { signingSerializationType, signature } =
                   decodeBitcoinSignature(bitcoinEncodedSignature);
 
@@ -442,9 +442,15 @@ export const opCheckMultiSig =
                   sha256,
                 );
                 const digest = hash256(serialization, sha256);
-
-                // eslint-disable-next-line functional/no-expression-statements, functional/immutable-data
+                /* eslint-disable functional/no-expression-statements, functional/immutable-data */
+                finalState.metrics.signatureCheckCount += 1;
+                const doubleHashed = 1;
+                finalState.metrics.hashDigestIterations +=
+                  doubleHashed +
+                  lengthToHashDigestIterationCount(serialization.length);
                 finalState.signedMessages.push({ digest, serialization });
+                /* eslint-enable functional/no-expression-statements, functional/immutable-data */
+
                 const success = secp256k1.verifySignatureSchnorr(
                   signature,
                   publicKey,
@@ -509,9 +515,6 @@ export const opCheckMultiSig =
                 );
               }
 
-              // eslint-disable-next-line functional/no-expression-statements, functional/immutable-data
-              finalState.metrics.signatureCheckCount += 1;
-
               const { signingSerializationType, signature } =
                 decodeBitcoinSignature(bitcoinEncodedSignature);
 
@@ -521,9 +524,13 @@ export const opCheckMultiSig =
                 sha256,
               );
               const digest = hash256(serialization, sha256);
-
-              // eslint-disable-next-line functional/no-expression-statements, functional/immutable-data
+              /* eslint-disable functional/no-expression-statements, functional/immutable-data */
+              const doubleHashed = 1;
+              finalState.metrics.hashDigestIterations +=
+                doubleHashed +
+                lengthToHashDigestIterationCount(serialization.length);
               finalState.signedMessages.push({ digest, serialization });
+              /* eslint-enable functional/no-expression-statements, functional/immutable-data */
 
               if (signature.length === ConsensusCommon.schnorrSignatureLength) {
                 return applyError(
@@ -557,6 +564,9 @@ export const opCheckMultiSig =
                 AuthenticationErrorCommon.nonNullSignatureFailure,
               );
             }
+
+            // eslint-disable-next-line functional/no-expression-statements, functional/immutable-data
+            finalState.metrics.signatureCheckCount += publicKeys.length;
 
             return pushToStack(finalState, [booleanToVmNumber(success)]);
           },
@@ -645,13 +655,14 @@ export const opCheckDataSig =
       if (signature.length === 0) {
         return pushToStack(state, [booleanToVmNumber(false)]);
       }
-      // eslint-disable-next-line functional/no-expression-statements, functional/immutable-data
-      state.metrics.signatureCheckCount += 1;
 
       const digest = sha256.hash(message);
-
-      // eslint-disable-next-line functional/no-expression-statements, functional/immutable-data
+      /* eslint-disable functional/no-expression-statements, functional/immutable-data */
+      nextState.metrics.signatureCheckCount += 1;
+      nextState.metrics.hashDigestIterations +=
+        lengthToHashDigestIterationCount(message.length);
       nextState.signedMessages.push({ digest, message });
+      /* eslint-enable functional/no-expression-statements, functional/immutable-data */
 
       const useSchnorr =
         signature.length === ConsensusCommon.schnorrSignatureLength;

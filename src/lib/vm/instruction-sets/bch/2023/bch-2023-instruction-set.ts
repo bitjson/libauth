@@ -342,7 +342,8 @@ export const createInstructionSetBch2023 = <
         metrics: {
           arithmeticCost: 0,
           bitwiseCost: 0,
-          executedInstructionCount: 0,
+          evaluatedInstructionCount: 0,
+          hashDigestIterations: 0,
           maxMemoryUsage: 0,
           signatureCheckCount: 0,
           stackPushedBytes: 0,

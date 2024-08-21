@@ -441,7 +441,7 @@ export const createVirtualMachine = <
     // eslint-disable-next-line functional/no-expression-statements, functional/immutable-data
     state.ip += 1;
     // eslint-disable-next-line functional/no-expression-statements, functional/immutable-data
-    state.metrics.executedInstructionCount += 1;
+    state.metrics.evaluatedInstructionCount += 1;
     return state;
   };
 
@@ -478,7 +478,7 @@ export const createVirtualMachine = <
   const initialize =
     instructionSet.initialize ??
     (() =>
-      ({ metrics: { executedInstructionCount: 0 } }) as Partial<ProgramState>);
+      ({ metrics: { evaluatedInstructionCount: 0 } }) as Partial<ProgramState>);
   const stateClone = partiallyCloneProgramState;
   const { success } = instructionSet;
 

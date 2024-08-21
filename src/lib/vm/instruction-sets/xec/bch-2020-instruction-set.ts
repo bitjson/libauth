@@ -137,7 +137,8 @@ export const createAuthenticationProgramStateBch2020 = ({
   metrics = {
     arithmeticCost: 0,
     bitwiseCost: 0,
-    executedInstructionCount: 0,
+    evaluatedInstructionCount: 0,
+    hashDigestIterations: 0,
     signatureCheckCount: 0,
     stackPushedBytes: 0,
   },

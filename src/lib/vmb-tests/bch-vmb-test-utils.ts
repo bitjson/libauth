@@ -5,7 +5,7 @@ import { encodeBech32, regroupBits } from '../address/address.js';
 import { createCompilerBch } from '../compiler/compiler-bch/compiler-bch.js';
 import { walletTemplateToCompilerConfiguration } from '../compiler/compiler-utils.js';
 import { sha256 } from '../crypto/crypto.js';
-import { binToHex, flattenBinArray } from '../format/format.js';
+import { binToHex, flattenBinArray, sortObjectKeys } from '../format/format.js';
 import type { WalletTemplate, WalletTemplateScenario } from '../lib.js';
 import {
   encodeTransaction,
@@ -33,6 +33,8 @@ const vmVersionsBch = [
   'chip_loops',
   'chip_zce',
   'chip_txv5',
+  /* For error reporting in combinatorial test generation: */ 'unknown',
+  /* For skipping in combinatorial test generation: */ 'skip',
 ] as const;
 /**
  * These are the VM "modes" for which tests can be generated.
@@ -105,6 +107,8 @@ export const vmbTestDefinitionDefaultBehaviorBch: TestSetOverrideLabelBch[] = [
 const testSetOverrideListBch = [
   ['chip_bigint_invalid'],
   ['chip_bigint'],
+  ['chip_bigint', 'nonstandard'],
+  ['chip_bigint', 'nonstandard', 'p2sh_invalid'],
   ['spec'],
   ['2023_invalid'],
   ['2023_invalid', '2025_nonstandard', 'p2sh_ignore'],
@@ -138,6 +142,8 @@ const testSetOverrideListBch = [
   ['p2sh_ignore'],
   ['p2sh_invalid'],
   ['p2sh32_nonstandard'],
+  ['skip'],
+  ['unknown'],
   [],
 ] as const;
 
@@ -210,14 +216,60 @@ export const supportedTestSetOverridesBch: {
    * {@link vmbTestDefinitionDefaultBehaviorBch}.
    */
   chip_bigint: [
-    { mode: 'nonP2SH', sets: ['chip_bigint_nonstandard'] },
-    { mode: 'P2SH20', sets: ['chip_bigint_standard'] },
-    { mode: 'P2SH32', sets: ['chip_bigint_standard'] },
+    {
+      mode: 'nonP2SH',
+      sets: ['chip_bigint_nonstandard', '2023_invalid', '2025_nonstandard'],
+    },
+    {
+      mode: 'P2SH20',
+      sets: ['chip_bigint_standard', '2023_invalid', '2025_standard'],
+    },
+    {
+      mode: 'P2SH32',
+      sets: ['chip_bigint_standard', '2023_invalid', '2025_standard'],
+    },
+  ],
+  'chip_bigint,nonstandard': [
+    {
+      mode: 'nonP2SH',
+      sets: ['chip_bigint_nonstandard', '2023_invalid', '2025_nonstandard'],
+    },
+    {
+      mode: 'P2SH20',
+      sets: ['chip_bigint_nonstandard', '2023_invalid', '2025_nonstandard'],
+    },
+    {
+      mode: 'P2SH32',
+      sets: ['chip_bigint_nonstandard', '2023_invalid', '2025_nonstandard'],
+    },
+  ],
+  'chip_bigint,nonstandard,p2sh_invalid': [
+    {
+      mode: 'nonP2SH',
+      sets: ['chip_bigint_nonstandard', '2023_invalid', '2025_nonstandard'],
+    },
+    {
+      mode: 'P2SH20',
+      sets: ['chip_bigint_invalid', '2023_invalid', '2025_invalid'],
+    },
+    {
+      mode: 'P2SH32',
+      sets: ['chip_bigint_invalid', '2023_invalid', '2025_invalid'],
+    },
   ],
   chip_bigint_invalid: [
-    { mode: 'nonP2SH', sets: ['chip_bigint_invalid'] },
-    { mode: 'P2SH20', sets: ['chip_bigint_invalid'] },
-    { mode: 'P2SH32', sets: ['chip_bigint_invalid'] },
+    {
+      mode: 'nonP2SH',
+      sets: ['chip_bigint_invalid', '2023_invalid', '2025_invalid'],
+    },
+    {
+      mode: 'P2SH20',
+      sets: ['chip_bigint_invalid', '2023_invalid', '2025_invalid'],
+    },
+    {
+      mode: 'P2SH32',
+      sets: ['chip_bigint_invalid', '2023_invalid', '2025_invalid'],
+    },
   ],
   chip_loops: [
     { mode: 'nonP2SH', sets: ['chip_loops_nonstandard'] },
@@ -605,7 +657,7 @@ export const vmbTestDefinitionToVmbTests = (
     if (typeof result.scenario === 'string') {
       // eslint-disable-next-line functional/no-throw-statements
       throw new Error(
-        `Error while generating "${description}" - ${result.scenario}`,
+        `Error while generating "${description}" - ${result.scenario}. Unlocking script: ${unlockingScript}. Redeem or locking script: ${redeemOrLockingScript}.`,
       );
     }
     const encodedTx = encodeTransaction(result.scenario.program.transaction);
@@ -702,3 +754,110 @@ export const vmbTestPartitionMasterTestList = (
     });
     return accumulatedTestSets;
   }, {});
+
+export type PossibleTestValue = [description: string, value: string];
+export type TestValues = PossibleTestValue[];
+
+/**
+ * Given an array of arrays, produce an array of all possible combinations.
+ * E.g.: `[['a', 'b'], [1, 2], ['x']]` produces:
+ * `[ [ 'a', 1, 'x' ], [ 'a', 2, 'x' ], [ 'b', 1, 'x' ], [ 'b', 2, 'x' ] ]`.
+ * @param arrays - an array of arrays
+ */
+export const generateCombinations = <T>(arrays: T[][]): T[][] =>
+  arrays.reduce<T[][]>(
+    (acc, curr) => acc.flatMap((combo) => curr.map((item) => [...combo, item])),
+    [[]],
+  );
+
+/**
+ * Map an array of value arrays onto a a template test case.
+ * @param templates - templates for unlockingScript, lockingScript, and
+ * test description.
+ * @param possibleValues - an array of arrays of `PossibleValue`s
+ */
+export const mapTestCases = (
+  templates: [
+    unlockingScript: string,
+    lockingScript: string,
+    description: string,
+  ],
+  combinations: TestValues[],
+  { prefixAsHexLiterals = false }: { prefixAsHexLiterals?: boolean } = {},
+): VmbTestDefinition[] =>
+  combinations.map((values) => {
+    const replace = (template: string, useLabel = false) =>
+      // eslint-disable-next-line complexity
+      template.replace(/\$(?<index>\d+)/gu, (_, index) => {
+        const raw = `${prefixAsHexLiterals && !useLabel ? '0x' : ''}${
+          values[Number(index)]?.[useLabel ? 0 : 1] ??
+          'LIBAUTH_GENERATION_ERROR_UNKNOWN_INDEX'
+        }`;
+        return raw === '0x' ? '0' : raw;
+      });
+    return [
+      replace(templates[0]),
+      replace(templates[1]),
+      replace(templates[2], true),
+    ];
+  });
+
+/**
+ * Given a template test case and an array of possible-value arrays, produce a
+ * combinatorial set of test cases.
+ * @param templates - templates for unlockingScript, lockingScript, and
+ * test description.
+ * @param possibleValues - an array of arrays of `PossibleValue`s
+ */
+export const generateTestCases = (
+  templates: [
+    unlockingScript: string,
+    lockingScript: string,
+    description: string,
+  ],
+  possibleValues: PossibleTestValue[][],
+): VmbTestDefinition[] => {
+  const combinations = generateCombinations(possibleValues);
+  return mapTestCases(templates, combinations);
+};
+
+type TestSetOverrideListBchIndex = 3;
+/**
+ * Given a generated set of tests, set expected results using a dictionary of
+ * descriptions.
+ *
+ * To make updating tests easier, the test definitions include tests that aren't
+ * included in the dictionary, this function logs the new dictionary and throws
+ * (to exit early).
+ *
+ * To exclude a particular case from the resulting set, mark it as `['skip']`,
+ * (e.g. if that particular test is already manually defined elsewhere.)
+ */
+export const setExpectedResults = (
+  generatedDefinitions: VmbTestDefinition[],
+  resultDictionary: {
+    [description: string]:
+      | VmbTestDefinition[TestSetOverrideListBchIndex]
+      | ['skip'];
+  },
+): VmbTestDefinition[] => {
+  const results = generatedDefinitions.map((definition) => {
+    const [_unlockingScript, _redeemOrLockingScript, testDescription, _labels] =
+      definition;
+    // eslint-disable-next-line functional/no-expression-statements, functional/immutable-data
+    definition[3] = resultDictionary[testDescription] ?? ['unknown'];
+    return definition;
+  });
+  if (results.find((definition) => definition[3]?.[0] === 'unknown')) {
+    const newDictionary = results.reduce<{
+      [description: string]: VmbTestDefinition[TestSetOverrideListBchIndex];
+    }>((dict, def) => ({ ...dict, [def[2]]: def[3] }), {});
+    // eslint-disable-next-line functional/no-expression-statements, no-console
+    console.log(sortObjectKeys(newDictionary));
+    // eslint-disable-next-line functional/no-throw-statements
+    throw new Error(
+      'Libauth test generation error: one or more test cases in the above set have not been reviewed for expected behavior. Please update the above result dictionary for the relevant "setExpectedResults" and regenerate the tests.',
+    );
+  }
+  return results.filter((def) => def[3]?.[0] !== 'skip');
+};

@@ -129,7 +129,9 @@ export const createInstructionSetBch2025 = <
     sha256,
   });
   const conditionallyPush = pushOperation<AuthenticationProgramState>({
-    maximumPushSize: ConsensusBch2025.maximumStackItemLength,
+    exceededMaximumStackItemLength:
+      AuthenticationErrorBch2025.exceededMaximumStackItemLength,
+    maximumStackItemLength: consensus.maximumStackItemLength,
   });
   return {
     ...instructionSet,
@@ -138,16 +140,14 @@ export const createInstructionSetBch2025 = <
       state.metrics.operationCost = measureOperationCost(state.metrics);
       if (
         state.stack.length + state.alternateStack.length >
-        ConsensusBch2025.maximumStackDepth
+        consensus.maximumStackDepth
       ) {
         return applyError(
           state,
           AuthenticationErrorBch2025.exceededMaximumStackDepth,
         );
       }
-      if (
-        state.controlStack.length > ConsensusBch2025.maximumControlStackDepth
-      ) {
+      if (state.controlStack.length > consensus.maximumControlStackDepth) {
         return applyError(
           state,
           AuthenticationErrorBch2025.exceededMaximumControlStackDepth,
@@ -161,8 +161,8 @@ export const createInstructionSetBch2025 = <
         ...initialState,
         metrics: {
           ...initialState?.metrics,
-          hashDigestIterations: 0,
           maxMemoryUsage: 0,
+          operationCost: 0,
         },
       } as Partial<AuthenticationProgramStateBch2025> as Partial<AuthenticationProgramState>;
     },
@@ -255,12 +255,13 @@ export const createInstructionSetBch2025 = <
             createOpNum2Bin({
               exceededMaximumStackItemLengthError:
                 AuthenticationErrorBch2025.exceededMaximumStackItemLength,
-              maximumStackItemLength: ConsensusBch2025.maximumStackItemLength,
+              maximumStackItemLength: consensus.maximumStackItemLength,
             }),
           ),
           [OpcodesBch2023.OP_BIN2NUM]: conditionallyEvaluate(
             createOpBin2Num({
-              maximumStackItemLength: ConsensusBch2025.maximumStackItemLength,
+              maximumStackItemLength: consensus.maximumStackItemLength,
+              maximumVmNumberLength: consensus.maximumStackItemLength,
             }),
           ),
           [OpcodesBch2023.OP_1ADD]: conditionallyEvaluate(op1AddChipBigInt),
